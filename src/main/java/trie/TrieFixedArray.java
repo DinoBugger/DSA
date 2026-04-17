@@ -23,11 +23,10 @@ public class TrieFixedArray {
     TrieNode cur = root;
     for (char c : word.toCharArray()) {
       int index = c - 'a';
-      TrieNode next = cur.children[index];
-      if (next == null) {
-        next = new TrieNode();
+      if (cur.children[index] == null) {
+        cur.children[index] = new TrieNode();
       }
-      cur = next;
+      cur = cur.children[index];
     }
     cur.isEndOfWord = true;
   }
@@ -37,6 +36,9 @@ public class TrieFixedArray {
     TrieNode cur = root;
     for (char c : str.toCharArray()) {
       int index = c - 'a';
+      if (cur == null) {
+        return null;  // should check null before access
+      }
       cur = cur.children[index];
     }
     return cur;
@@ -47,7 +49,8 @@ public class TrieFixedArray {
     if (word == null || word.isEmpty()) {
       return false;
     }
-    return getNode(word).isEndOfWord;
+    var node = getNode(word);
+    return node != null && !node.isEndOfWord;
   }
 
   // ============= STARTSWITH
@@ -91,7 +94,8 @@ public class TrieFixedArray {
       // never delete node which has child
       // make sure deleting not disturb other word. Ex: on the going higher path check isEndOfWord
       // to not delete a shorter Ex. you delete apple not the word app
-      if (child.children.length == 0 && !child.isEndOfWord) {
+      // child.children.length == 0  is wrong because every children array default length is 26
+      if (isEmpty(child) && !child.isEndOfWord) {
         int index = word.charAt(i) - 'a';
         parent.children[index] = null;
       } else {
@@ -103,10 +107,19 @@ public class TrieFixedArray {
     return true;
   }
 
+  private boolean isEmpty(TrieNode node) {
+    for (TrieNode n : node.children) {
+      if (n != null) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // ========= GET ALL WORDs START WITH PREFIX
   public List<String> getAllWordsStartWith(String prefix) {
     List<String> result = new ArrayList<>();
-    if (prefix == null && prefix.isEmpty()) {
+    if (prefix == null || prefix.isEmpty()) {
       return result;
     }
     // first, we get started at the end of prefix node
@@ -129,7 +142,8 @@ public class TrieFixedArray {
       for (int i = 0; i < curState.node.children.length; i++) {
         if (curState.node.children[i] != null) {
           StringBuilder nextWord = new StringBuilder(curState.word);
-          nextWord.append((char) i + 'a');
+          nextWord.append(
+              (char) (i + 'a'));   // parse for the expression not solely for i like (char) i ...
           stack.push(new DFSState(curState.node.children[i], nextWord));
         }
       }
